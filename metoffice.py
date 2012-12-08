@@ -2,6 +2,7 @@ import httplib
 import urllib
 from latlong import LatLong
 import xml.dom.minidom
+import dateutil.parser
 
 class MetOffice:
     def __init__(self):
@@ -38,20 +39,6 @@ class MetOffice:
         return nearest_location_id
 
 
-    def get_forecast_for_location(self, location):
-        query = {'key': self.api_key, 'res': '3hourly'}
-        connection = httplib.HTTPConnection(self.base_url)
-        request_path = "/public/data/val/wxfcs/all/xml/{0}?".format(location)
-        connection.request("GET", request_path + urllib.urlencode(query))
-        response = connection.getresponse()
-        raw_data = response.read()
-        connection.close()
-        xml_data = xml.dom.minidom.parseString(raw_data)
-        for report in xml_data.getElementsByTagName("Rep"):
-            weather_type = int(report.getAttribute('W'))
-            print self.weather_types[weather_type]
-
-
     def get_locations_table(self):
         query = {'key' : self.api_key}
         connection = httplib.HTTPConnection(self.base_url)
@@ -68,4 +55,31 @@ class MetOffice:
             position = LatLong(loc_lat, loc_long)
             loc_name = location.getAttribute("name")
             self.locations[loc_id] = (loc_name, position)
+
+
+    def get_forecast_for_location(self, location):
+        query = {'key': self.api_key, 'res': '3hourly'}
+        connection = httplib.HTTPConnection(self.base_url)
+        request_path = "/public/data/val/wxfcs/all/xml/{0}?".format(location)
+        connection.request("GET", request_path + urllib.urlencode(query))
+        response = connection.getresponse()
+        raw_data = response.read()
+        connection.close()
+        xml_data = xml.dom.minidom.parseString(raw_data)
+        for day in xml_data.getElementsByTagName("Period"):
+            ForecastDay(day)
+
+
+class ForecastDay:
+    def __init__(self, xml_forecast):
+        print xml_forecast.getAttribute("value")
+        self.date = dateutil.parser.parse(xml_forecast.getAttribute("value"), fuzzy=True)
+        self.forecasts = []
+        for rep in xml_forecast.getElementsByTagName("Rep"):
+            self.forecasts.append(SingleForecast(self.date, rep))
+
+
+class SingleForecast:
+    def __init__(self, day, xml_forecast):
+        print xml_forecast.firstChild.data
 
