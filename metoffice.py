@@ -17,8 +17,8 @@ weather_types = ['Clear night', 'Sunny day', 'Partly cloudy (night)',
                   'Thunder']
 
 class MetOffice:
-    def __init__(self):
-        self.api_key = "051626da-f6ad-43b2-a535-e1a44257a087"
+    def __init__(self, api_key):
+        self.api_key = api_key 
         self.base_url = "datapoint.metoffice.gov.uk"
         self.locations = None
 
