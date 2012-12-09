@@ -4,22 +4,23 @@ from latlong import LatLong
 import xml.dom.minidom
 import dateutil.parser
 
+weather_types = ['Clear night', 'Sunny day', 'Partly cloudy (night)',
+                  'Partly cloudy (day)', 'Not used', 'Mist', 'Fog', 
+                  'Cloudy', 'Overcast', 'Light rain shower (night)', 
+                  'Light rain shower (day)', 'Drizzle', 'Light rain',
+                  'Heavy rain shower (night)', 'Heavy rain shower (day)', 
+                  'Heavy rain', 'Sleet shower (night)', 'Sleet shower (day)',
+                  'Sleet', 'Hail shower (night)', 'Hail shower (day)',
+                  'Hail', 'Light snow shower (night)', 'Light snow shower (day)',
+                  'Light snow', 'Heavy snow shower (night)', 'Heavy snow shower (day)',
+                  'Heavy snow', 'Thunder shower (night)', 'Thunder shower (day)',
+                  'Thunder']
+
 class MetOffice:
     def __init__(self):
         self.api_key = "051626da-f6ad-43b2-a535-e1a44257a087"
         self.base_url = "datapoint.metoffice.gov.uk"
         self.locations = None
-        self.weather_types = ['Clear night', 'Sunny day', 'Partly cloudy (night)',
-                              'Partly cloudy (day)', 'Not used', 'Mist', 'Fog', 
-                              'Cloudy', 'Overcast', 'Light rain shower (night)', 
-                              'Light rain shower (day)', 'Drizzle', 'Light rain',
-                              'Heavy rain shower (night)', 'Heavy rain shower (day)', 
-                              'Heavy rain', 'Sleet shower (night)', 'Sleet shower (day)',
-                              'Sleet', 'Hail shower (night)', 'Hail shower (day)',
-                              'Hail', 'Light snow shower (night)', 'Light snow shower (day)',
-                              'Light snow', 'Heavy snow shower (night)', 'Heavy snow shower (day)',
-                              'Heavy snow', 'Thunder shower (night)', 'Thunder shower (day)',
-                              'Thunder']
 
 
     def name_of_location_id(self, loc_id):
@@ -72,14 +73,26 @@ class MetOffice:
 
 class ForecastDay:
     def __init__(self, xml_forecast):
-        print xml_forecast.getAttribute("value")
         self.date = dateutil.parser.parse(xml_forecast.getAttribute("value"), fuzzy=True)
         self.forecasts = []
         for rep in xml_forecast.getElementsByTagName("Rep"):
             self.forecasts.append(SingleForecast(self.date, rep))
+        for fc in self.forecasts:
+            print fc.forecast_as_text()
 
 
 class SingleForecast:
     def __init__(self, day, xml_forecast):
-        print xml_forecast.firstChild.data
+        self.datetime = day + dateutil.relativedelta.relativedelta(minutes=int(xml_forecast.firstChild.data))
+        self.wind_direction = xml_forecast.getAttribute("D")
+        self.feels_like_temp = int(xml_forecast.getAttribute("F"))
+        self.wind_gusts = int(xml_forecast.getAttribute("G"))
+        self.humidity = int(xml_forecast.getAttribute("H"))
+        self.percipitation_probability = int(xml_forecast.getAttribute("Pp"))
+        self.wind_speed = int(xml_forecast.getAttribute("S"))
+        self.max_uv_index = int(xml_forecast.getAttribute("U"))
+        self.weather_type = weather_types[int(xml_forecast.getAttribute("W"))]
+        self.temperature = int(xml_forecast.getAttribute("T"))
 
+    def forecast_as_text(self):
+        return "{0}: Wind {1} at {2} kts (gusting: {3} kts). {4}% prob. of percipitation".format(self.datetime, self.wind_direction, self.wind_speed, self.wind_gusts, self.percipitation_probability)
